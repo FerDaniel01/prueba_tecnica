@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import  Marshmallow
 
 app = Flask (__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = 'postgresql://miusuario:miclave@localhost/prueba_tecnica'
+app.config["SQLALCHEMY_DATABASE_URI"] = 'postgresql://miUsuario:miClave@localhost/prueba_tecnica'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']= False
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
@@ -15,8 +15,8 @@ class Paciente(db.Model):
     nombre = db.Column(db.String(120))
     email = db.Column(db.String(120), unique=True)
     telefono = db.Column(db.Integer, unique=True)
-    contrasena= db.Column(db.String(50))
-    direccion = db.Column(db.String(120))
+    contrasena= db.Column(db.String(255))
+    direccion = db.Column(db.String(150))
     fecha_nacimiento = db.Column(db.String(50))
     estado_salud= db.Column(db.String(500))
     observaciones= db.Column(db.String(500))
@@ -46,6 +46,14 @@ class UsuarioPaciente(ma.Schema):
 
 usuario_paciente = UsuarioPaciente()
 usuarios_paciente = UsuarioPaciente(many=True)
+
+
+class ConsultaMedica(ma.Schema):
+    class Meta:
+        fields = ('cedula','nombre', 'email', 'telefono','direccion','fecha_nacimiento','estado_salud','observaciones')
+
+Consulta = ConsultaMedica()
+Consultas = ConsultaMedica(many=True)
 
 
 @app.route('/crear', methods=['POST'])
@@ -88,6 +96,24 @@ def actualizarContrasena(cedula):
     db.session.commit()
 
     return usuario_paciente.jsonify(usuario)
+
+
+@app.route('/medico/<cedula>', methods=['PUT'])
+def diagnosticar(cedula):
+    usuario= Paciente.query.get(cedula)
+
+    estado_salud=request.json['estado_salud']
+
+    usuario.estado_salud=estado_salud
+
+    observaciones=request.json['observaciones']
+
+    usuario.observaciones=observaciones
+
+    db.session.commit()
+
+  
+    return Consulta.jsonify(usuario)
 
 
 if __name__ == "__main__":
